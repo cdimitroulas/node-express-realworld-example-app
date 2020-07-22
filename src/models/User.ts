@@ -69,30 +69,30 @@ export const generateJWT = (user: User) => (deps: {
 };
 
 export const favorite = (user: User) => (id: MongoId): User => {
-  const updatedFavourites = user.favorites.concat(id)
-  return { ...user, favorites: updatedFavourites }
-}
+  const updatedFavourites = user.favorites.concat(id);
+  return { ...user, favorites: updatedFavourites };
+};
 
 export const unfavorite = (user: User) => (id: MongoId): User => {
-  const updatedFavourites = user.favorites.filter(fav => fav !== id)
-  return { ...user, favorites: updatedFavourites }
-}
+  const updatedFavourites = user.favorites.filter((fav) => fav !== id);
+  return { ...user, favorites: updatedFavourites };
+};
 
 export const isFavorite = (user: User) => (id: MongoId): boolean =>
-  user.favorites.some(fav => fav === id)
+  user.favorites.some((fav) => fav === id);
 
 export const follow = (user: User) => (id: MongoId): User => {
-  const updatedFollows = user.following.concat(id)
-  return { ...user, following: updatedFollows }
-}
+  const updatedFollows = user.following.concat(id);
+  return { ...user, following: updatedFollows };
+};
 
 export const unfollow = (user: User) => (id: MongoId): User => {
-  const updatedFollows = user.following.filter(follow => follow !== id)
-  return { ...user, following: updatedFollows }
-}
+  const updatedFollows = user.following.filter((follow) => follow !== id);
+  return { ...user, following: updatedFollows };
+};
 
 export const isFollowing = (user: User) => (id: MongoId): boolean =>
-  user.following.some(f => f === id)
+  user.following.some((f) => f === id);
 
 // var UserSchema = new mongoose.Schema({
 //   username: {type: String, lowercase: true, unique: true, required: [true, "can't be blank"], match: [/^[a-zA-Z0-9]+$/, 'is invalid'], index: true},
