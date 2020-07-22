@@ -3,7 +3,7 @@ import { ObjectId } from "mongodb";
 import jwt from "jsonwebtoken";
 
 import { Email, MongoId, URL } from '../types'
-import * as User from "./User";
+import * as User from "./user.model";
 
 describe("User model", () => {
   describe('favorite', () => {
