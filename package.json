@@ -4,10 +4,15 @@
   "description": "conduit on node",
   "main": "app.js",
   "scripts": {
+    "compile": "typescript-scripts compile --allowJs",
+    "lint": "typescript-scripts lint './**/*.[j|t]s'",
     "mongo:start": "docker run --name realworld-mongo -p 27017:27017 mongo & sleep 5",
     "start": "node ./app.js",
     "dev": "nodemon ./app.js",
-    "test": "newman run ./tests/api-tests.postman.json -e ./tests/env-api-tests.postman.json",
+    "test": "npm run compile -- --noEmit && npm run lint && npm run test:unit && npm run test:e2e",
+    "test:unit": "typescript-scripts test src/",
+    "test:unit:watch": "typescript-scripts test --watch src/",
+    "test:e2e": "newman run ./tests/api-tests.postman.json -e ./tests/env-api-tests.postman.json",
     "stop": "lsof -ti :3000 | xargs kill",
     "mongo:stop": "docker stop realworld-mongo && docker rm realworld-mongo"
   },
@@ -17,6 +22,7 @@
   },
   "license": "ISC",
   "dependencies": {
+    "@cdimitroulas/typescript-scripts": "^1.1.1",
     "body-parser": "1.15.0",
     "cors": "2.7.1",
     "ejs": "2.4.1",
