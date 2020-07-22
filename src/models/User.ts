@@ -4,13 +4,10 @@ import crypto from "crypto";
 import { pipe } from "fp-ts/lib/function";
 import * as D from "fp-ts/lib/Date";
 import * as io from "fp-ts/lib/IO";
-import * as o from "fp-ts/lib/Option";
 import jwt from "jsonwebtoken";
-import validator from "validator";
-import { ObjectId } from "mongodb";
 // var secret = require('../config').secret;
 
-import { string } from "../types";
+import { Email, URL, MongoId } from "../types";
 
 export type User = {
   _id: MongoId;
@@ -23,30 +20,6 @@ export type User = {
   hash: Hash;
   salt: Salt;
 };
-
-export type Email = string & { __Email__: never };
-
-export const email = (input: unknown): o.Option<Email> =>
-  pipe(
-    string(input),
-    o.chain((str) => (validator.isEmail(str) ? o.some(str as Email) : o.none))
-  );
-
-export type URL = string & { __Url__: never };
-
-export const url = (input: unknown): o.Option<URL> =>
-  pipe(
-    string(input),
-    o.chain((str) => (validator.isURL(str) ? o.some(str as URL) : o.none))
-  );
-
-export type MongoId = string & { __MongoId__: never };
-
-export const mongoId = (input: unknown): o.Option<MongoId> =>
-  pipe(
-    string(input),
-    o.chain((str) => (ObjectId.isValid(str) ? o.some(str as MongoId) : o.none))
-  );
 
 export type Salt = string & { __Salt__: never };
 
@@ -108,18 +81,6 @@ export const generateJWT = (user: User) => (deps: {
 //   hash: String,
 //   salt: String
 // }, {timestamps: true});
-
-// UserSchema.methods.generateJWT = function() {
-//   var today = new Date();
-//   var exp = new Date(today);
-//   exp.setDate(today.getDate() + 60);
-
-//   return jwt.sign({
-//     id: this._id,
-//     username: this.username,
-//     exp: parseInt(exp.getTime() / 1000),
-//   }, secret);
-// };
 
 // UserSchema.methods.toAuthJSON = function(){
 //   return {
