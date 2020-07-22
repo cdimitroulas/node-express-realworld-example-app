@@ -2,9 +2,56 @@ import { assert } from "chai";
 import { ObjectId } from "mongodb";
 import jwt from "jsonwebtoken";
 
+import { Email, MongoId, URL } from '../types'
 import * as User from "./User";
 
 describe("User model", () => {
+  describe('favorite', () => {
+    it('adds the ID to the users list of favorites', () => {
+      const hashOutput = User.hashPassword("password");
+      const user: User.User = {
+        _id: new ObjectId().toString() as MongoId,
+        username: "test123",
+        email: "test@test.com" as Email,
+        bio: "Hi there",
+        image: "www.imgur.com/123" as URL,
+        salt: hashOutput.salt,
+        hash: hashOutput.hash,
+        favorites: [],
+        following: [],
+      }
+
+      const idToFavourite = new ObjectId().toString() as MongoId
+
+      const updatedUser = User.favorite(user)(idToFavourite)
+
+      assert.deepStrictEqual(updatedUser, { ...user, favorites: [idToFavourite] })
+    })
+  })
+
+  describe('unfavorite', () => {
+    it('removes the ID to the users list of favorites', () => {
+      const hashOutput = User.hashPassword("password");
+      const favoriteId = new ObjectId().toString() as MongoId
+      const user: User.User = {
+        _id: new ObjectId().toString() as MongoId,
+        username: "test123",
+        email: "test@test.com" as Email,
+        bio: "Hi there",
+        image: "www.imgur.com/123" as URL,
+        salt: hashOutput.salt,
+        hash: hashOutput.hash,
+        favorites: [favoriteId],
+        following: [],
+      }
+
+
+      const updatedUser = User.unfavorite(user)(favoriteId)
+
+      assert.deepStrictEqual(updatedUser, { ...user, favorites: [] })
+    })
+  })
+
   describe("generateJWT", () => {
     it("generates a jwt which contains user id, username, expiry date + iat in the payload", () => {
       const hashOutput = User.hashPassword("password");
@@ -16,11 +63,11 @@ describe("User model", () => {
       const expectedExpiry = expiryDate.getTime() / 1000
 
       const user: User.User = {
-        _id: new ObjectId().toString() as User.MongoId,
+        _id: new ObjectId().toString() as MongoId,
         username: "test123",
-        email: "test@test.com" as User.Email,
+        email: "test@test.com" as Email,
         bio: "Hi there",
-        image: "www.imgur.com/123" as User.URL,
+        image: "www.imgur.com/123" as URL,
         salt: hashOutput.salt,
         hash: hashOutput.hash,
         favorites: [],
@@ -54,11 +101,11 @@ describe("User model", () => {
       const hashOutput = User.hashPassword(password);
 
       const user: User.User = {
-        _id: new ObjectId().toString() as User.MongoId,
+        _id: new ObjectId().toString() as MongoId,
         username: "test123",
-        email: "test@test.com" as User.Email,
+        email: "test@test.com" as Email,
         bio: "Hi there",
-        image: "www.imgur.com/123" as User.URL,
+        image: "www.imgur.com/123" as URL,
         salt: hashOutput.salt,
         hash: hashOutput.hash,
         favorites: [],
@@ -73,11 +120,11 @@ describe("User model", () => {
       const hashOutput = User.hashPassword(password);
 
       const user: User.User = {
-        _id: new ObjectId().toString() as User.MongoId,
+        _id: new ObjectId().toString() as MongoId,
         username: "test123",
-        email: "test@test.com" as User.Email,
+        email: "test@test.com" as Email,
         bio: "Hi there",
-        image: "www.imgur.com/123" as User.URL,
+        image: "www.imgur.com/123" as URL,
         salt: hashOutput.salt,
         hash: hashOutput.hash,
         favorites: [],

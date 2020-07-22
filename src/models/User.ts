@@ -1,11 +1,8 @@
-// var mongoose = require('mongoose');
-// var uniqueValidator = require('mongoose-unique-validator');
 import crypto from "crypto";
 import { pipe } from "fp-ts/lib/function";
 import * as D from "fp-ts/lib/Date";
 import * as io from "fp-ts/lib/IO";
 import jwt from "jsonwebtoken";
-// var secret = require('../config').secret;
 
 import { Email, URL, MongoId } from "../types";
 
@@ -71,6 +68,32 @@ export const generateJWT = (user: User) => (deps: {
   );
 };
 
+export const favorite = (user: User) => (id: MongoId): User => {
+  const updatedFavourites = user.favorites.concat(id)
+  return { ...user, favorites: updatedFavourites }
+}
+
+export const unfavorite = (user: User) => (id: MongoId): User => {
+  const updatedFavourites = user.favorites.filter(fav => fav !== id)
+  return { ...user, favorites: updatedFavourites }
+}
+
+export const isFavorite = (user: User) => (id: MongoId): boolean =>
+  user.favorites.some(fav => fav === id)
+
+export const follow = (user: User) => (id: MongoId): User => {
+  const updatedFollows = user.following.concat(id)
+  return { ...user, following: updatedFollows }
+}
+
+export const unfollow = (user: User) => (id: MongoId): User => {
+  const updatedFollows = user.following.filter(follow => follow !== id)
+  return { ...user, following: updatedFollows }
+}
+
+export const isFollowing = (user: User) => (id: MongoId): boolean =>
+  user.following.some(f => f === id)
+
 // var UserSchema = new mongoose.Schema({
 //   username: {type: String, lowercase: true, unique: true, required: [true, "can't be blank"], match: [/^[a-zA-Z0-9]+$/, 'is invalid'], index: true},
 //   email: {type: String, lowercase: true, unique: true, required: [true, "can't be blank"], match: [/\S+@\S+\.\S+/, 'is invalid'], index: true},
@@ -100,43 +123,3 @@ export const generateJWT = (user: User) => (deps: {
 //     following: user ? user.isFollowing(this._id) : false
 //   };
 // };
-
-// UserSchema.methods.favorite = function(id){
-//   if(this.favorites.indexOf(id) === -1){
-//     this.favorites.push(id);
-//   }
-
-//   return this.save();
-// };
-
-// UserSchema.methods.unfavorite = function(id){
-//   this.favorites.remove(id);
-//   return this.save();
-// };
-
-// UserSchema.methods.isFavorite = function(id){
-//   return this.favorites.some(function(favoriteId){
-//     return favoriteId.toString() === id.toString();
-//   });
-// };
-
-// UserSchema.methods.follow = function(id){
-//   if(this.following.indexOf(id) === -1){
-//     this.following.push(id);
-//   }
-
-//   return this.save();
-// };
-
-// UserSchema.methods.unfollow = function(id){
-//   this.following.remove(id);
-//   return this.save();
-// };
-
-// UserSchema.methods.isFollowing = function(id){
-//   return this.following.some(function(followId){
-//     return followId.toString() === id.toString();
-//   });
-// };
-
-// mongoose.model('User', UserSchema);
