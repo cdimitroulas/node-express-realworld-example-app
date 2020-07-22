@@ -23,6 +23,11 @@
   "license": "ISC",
   "dependencies": {
     "@cdimitroulas/typescript-scripts": "^1.1.1",
+    "@types/body-parser": "^1.19.0",
+    "@types/express": "^4.17.7",
+    "@types/express-session": "^1.17.0",
+    "@types/morgan": "^1.9.1",
+    "@types/passport": "^1.0.4",
     "body-parser": "1.15.0",
     "cors": "2.7.1",
     "ejs": "2.4.1",
