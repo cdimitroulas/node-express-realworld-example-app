@@ -54,7 +54,7 @@ export const salt = (): Salt => crypto.randomBytes(16).toString("hex") as Salt;
 
 export type Hash = string & { __Hash__: never };
 
-export const hash = (input: string, salt: Salt) =>
+export const hash = (input: string, salt: Salt): Hash =>
   crypto.pbkdf2Sync(input, salt, 10000, 512, "sha512").toString("hex") as Hash;
 
 export const hashPassword = (pw: string): { hash: Hash; salt: Salt } => {
