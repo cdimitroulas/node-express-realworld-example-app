@@ -1,7 +1,9 @@
+import * as e from "fp-ts/lib/Either";
 import * as o from "fp-ts/lib/Option";
 import * as te from "fp-ts/lib/TaskEither";
 import { Collection, ObjectId } from "mongodb";
 
+import { parseUser, ParsingError } from "./parsing";
 import { User } from "./user.model";
 import { MongoId } from "../types";
 import {pipe} from "fp-ts/lib/function";
@@ -16,22 +18,27 @@ const repositoryError = (error: unknown) => ({
   error,
 });
 
-const findOne = (id: MongoId) => (collection: Collection<Record<string, unknown>>) =>
+type Document = Record<string, unknown> & { _id: ObjectId }
+
+const findOne = (id: MongoId) => (collection: Collection<Document>) =>
   te.tryCatch(
     () => collection.findOne({ id: new ObjectId(id) }),
     repositoryError
   );
 
 export const findById = (id: MongoId) => (
-  collection: Collection<Record<string, unknown>
-): te.TaskEither<RepositoryError, o.Option<User>> => {
-  pipe(
+  collection: Collection<Document>
+): te.TaskEither<RepositoryError | ParsingError, o.Option<User>> => {
+  return pipe(
     findOne(id)(collection),
-    te.chain(dbResult => {
+    te.chainW(dbResult => {
       if (dbResult === null) return te.right(o.none)
 
-      // TODO create parseUser
-      return parseUser(dbResult)
+      return pipe(
+        parseUser(dbResult),
+        e.map(o.some),
+        te.fromEither
+      )
     })
   )
 };

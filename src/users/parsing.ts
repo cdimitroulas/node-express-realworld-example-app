@@ -21,7 +21,7 @@ type NotAnObject = { __tag: "NotAnObject" };
 
 type InvalidFields = { __tag: "InvalidFields"; errors: FieldErrors };
 
-type ParsingError = NotAnObject | InvalidFields;
+export type ParsingError = NotAnObject | InvalidFields;
 
 const objValidation = e.getValidation(getObjectSemigroup<FieldErrors>());
 
