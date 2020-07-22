@@ -1,10 +1,23 @@
+import * as Arr from 'fp-ts/lib/Array'
 import * as o from "fp-ts/lib/Option";
 import { pipe } from "fp-ts/lib/function";
+import isPlainObject from 'lodash.isplainobject'
 import validator from "validator";
 import { ObjectId } from "mongodb";
 
+type TypeConstructor<T> = (input: unknown) => o.Option<T>
+
+export const array = (input: unknown): o.Option<unknown[]> =>
+  Array.isArray(input) ? o.some(input) : o.none;
+
+export const arrayOf = <T>(typeConst: TypeConstructor<T>) => (input: unknown[]): o.Option<T[]> =>
+  Arr.sequence(o.option)(input.map(typeConst))
+
 export const string = (input: unknown): o.Option<string> =>
   typeof input === "string" ? o.some(input) : o.none;
+
+export const unknownObject = (input: unknown): o.Option<Record<string, unknown>> =>
+  isPlainObject(input) ? o.some(input as Record<string, unknown>) : o.none;
 
 export type Email = string & { __Email__: never };
 
