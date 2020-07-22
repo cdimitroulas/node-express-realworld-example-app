@@ -1,10 +1,10 @@
-import * as o from 'fp-ts/lib/Option'
-import { pipe } from 'fp-ts/lib/function';
-import validator from 'validator'
-import { ObjectId } from 'mongodb'
+import * as o from "fp-ts/lib/Option";
+import { pipe } from "fp-ts/lib/function";
+import validator from "validator";
+import { ObjectId } from "mongodb";
 
 export const string = (input: unknown): o.Option<string> =>
-  typeof input === "string" ? o.some(input) : o.none
+  typeof input === "string" ? o.some(input) : o.none;
 
 export type Email = string & { __Email__: never };
 
@@ -29,4 +29,3 @@ export const mongoId = (input: unknown): o.Option<MongoId> =>
     string(input),
     o.chain((str) => (ObjectId.isValid(str) ? o.some(str as MongoId) : o.none))
   );
-
