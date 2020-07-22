@@ -1,20 +1,18 @@
-# ![Node/Express/Mongoose Example App](project-logo.png)
+# ![Node/Typescript/FP-TS/Express/ Example App](project-logo.png)
 
-[![Build Status](https://travis-ci.org/anishkny/node-express-realworld-example-app.svg?branch=master)](https://travis-ci.org/anishkny/node-express-realworld-example-app)
-
-> ### Example Node (Express + Mongoose) codebase containing real world examples (CRUD, auth, advanced patterns, etc) that adheres to the [RealWorld](https://github.com/gothinkster/realworld-example-apps) API spec.
+> ### Example Node (Typescript, Express + FP-TS) codebase containing real world examples (CRUD, auth, advanced patterns, etc) that adheres to the [RealWorld](https://github.com/gothinkster/realworld-example-apps) API spec.
 
 <a href="https://thinkster.io/tutorials/node-json-api" target="_blank"><img width="454" src="https://raw.githubusercontent.com/gothinkster/realworld/master/media/learn-btn-hr.png" /></a>
 
-This repo is functionality complete — PRs and issues welcome!
+This repo is a WIP
 
 # Getting started
 
-To get the Node server running locally:
+To get the server running locally:
 
 - Clone this repo
 - `npm install` to install all required dependencies
-- Install MongoDB Community Edition ([instructions](https://docs.mongodb.com/manual/installation/#tutorials)) and run it by executing `mongod`
+- `npm run mongo:start` to run the MongoDB database
 - `npm run dev` to start the local server
 
 Alternately, to quickly try out this repo in the cloud, you can [![Remix on Glitch](https://cdn.glitch.com/2703baf2-b643-4da7-ab91-7ee2a2d00b5b%2Fremix-button.svg)](https://glitch.com/edit/#!/remix/realworld)
@@ -33,14 +31,15 @@ Alternately, to quickly try out this repo in the cloud, you can [![Remix on Glit
 
 ## Application Structure
 
-- `app.js` - The entry point to our application. This file defines our express server and connects it to MongoDB using mongoose. It also requires the routes and models we'll be using in the application.
-- `config/` - This folder contains configuration for passport as well as a central location for configuration/environment variables.
-- `routes/` - This folder contains the route definitions for our API.
-- `models/` - This folder contains the schema definitions for our Mongoose models.
+- `src/app.js` - The entry point to our application. This file defines our express server and connects it to MongoDB using mongoose. It also requires the routes and models we'll be using in the application.
+- `src/config/` - This folder contains configuration for passport as well as a central location for configuration/environment variables.
+- `src/routes/` - This folder contains the route definitions for our API.
 
-## Error Handling
+## Testing
 
-In `routes/api/index.js`, we define a error-handling middleware for handling Mongoose's `ValidationError`. This middleware will respond with a 422 status code and format the response to have [error messages the clients can understand](https://github.com/gothinkster/realworld/blob/master/API.md#errors-and-status-codes)
+- Run unit tests with `npm run test:unit` or `npm run test:unit:watch`
+- Run E2E tests with `npm run test:e2e`
+- Run all tests with `npm test`
 
 ## Authentication
 
