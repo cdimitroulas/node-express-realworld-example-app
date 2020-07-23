@@ -14,6 +14,9 @@ export const arrayOf = <T>(typeConst: TypeConstructor<T>) => (
   input: unknown[]
 ): o.Option<T[]> => Arr.sequence(o.option)(input.map(typeConst));
 
+export const number = (input: unknown): o.Option<number> =>
+  typeof input === "number" ? o.some(input) : o.none;
+
 export const string = (input: unknown): o.Option<string> =>
   typeof input === "string" ? o.some(input) : o.none;
 

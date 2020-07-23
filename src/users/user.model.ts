@@ -4,6 +4,7 @@ import * as D from "fp-ts/lib/Date";
 import * as io from "fp-ts/lib/IO";
 import jwt from "jsonwebtoken";
 
+import { JWTPayload } from "../routes/authenticatedHandler";
 import { Email, URL, MongoId } from "../types";
 
 export type User = {
@@ -38,13 +39,15 @@ export const isValidPassword = (pw: string, user: User): boolean =>
 
 type JWT = string & { __JWT__: never };
 
-const createJWT = <T extends object>(payload: T, secret: string): JWT =>
+const createJWT = (payload: JWTPayload, secret: string): JWT =>
   jwt.sign(payload, secret) as JWT;
 
-export const generateJWT = (user: User) => (deps: {
+type GenerateJWTDeps = {
   now: typeof D.create;
   secret: string;
-}): io.IO<JWT> => {
+}
+
+export const generateJWT = (user: User) => (deps: GenerateJWTDeps): io.IO<JWT> => {
   return pipe(
     deps.now,
     io.map((today) => {
@@ -93,6 +96,36 @@ export const unfollow = (user: User) => (id: MongoId): User => {
 
 export const isFollowing = (user: User) => (id: MongoId): boolean =>
   user.following.some((f) => f === id);
+
+type AuthDTO = {
+  username: string;
+  email: string;
+  token: string;
+  bio: string;
+  image: string;
+};
+
+export const toAuthDTO = (user: User) => (deps: GenerateJWTDeps): io.IO<AuthDTO> => {
+  return pipe(
+    generateJWT(user)(deps),
+    io.map((token) => ({
+      username: user.username,
+      email: user.email,
+      token,
+      bio: user.bio,
+      image: user.image,
+    }))
+  );
+};
+// UserSchema.methods.toAuthJSON = function(){
+//   return {
+//     username: this.username,
+//     email: this.email,
+//     token: this.generateJWT(),
+//     bio: this.bio,
+//     image: this.image
+//   };
+// };
 
 // var UserSchema = new mongoose.Schema({
 //   username: {type: String, lowercase: true, unique: true, required: [true, "can't be blank"], match: [/^[a-zA-Z0-9]+$/, 'is invalid'], index: true},
