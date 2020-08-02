@@ -6,7 +6,7 @@ import { Collection, ObjectId } from "mongodb";
 import { parseUser, UserParsingError } from "./parsing";
 import { User } from "./user.model";
 import { MongoId } from "../types";
-import {pipe} from "fp-ts/lib/function";
+import { pipe } from "fp-ts/lib/function";
 
 type RepositoryError = {
   __tag: "RepositoryError";
@@ -18,7 +18,12 @@ const repositoryError = (error: unknown) => ({
   error,
 });
 
-type Document = Record<string, unknown> & { _id: ObjectId }
+type DuplicateError = {
+  __tag: "DuplicateError";
+  error: "Email already taken" | "Username already taken";
+}
+
+type Document = Record<string, unknown> & { _id: ObjectId };
 
 const findOne = (id: MongoId) => (collection: Collection<Document>) =>
   te.tryCatch(
@@ -31,14 +36,32 @@ export const findById = (id: MongoId) => (
 ): te.TaskEither<RepositoryError | UserParsingError, o.Option<User>> => {
   return pipe(
     findOne(id)(collection),
-    te.chainW(dbResult => {
-      if (dbResult === null) return te.right(o.none)
+    te.chainW((dbResult) => {
+      if (dbResult === null) return te.right(o.none);
 
       return pipe(
         parseUser(dbResult),
         e.map(o.some),
         te.fromEither
-      )
+      );
     })
+  );
+};
+
+const insertTE = (user: User) => (collection: Collection<Document>) =>
+  te.tryCatch(
+    () => collection.insertOne({ ...user, _id: new ObjectId(user._id) }),
+    (error) => {
+      // TODO deal with MongoDB duplicate key error
+      return repositoryError(error);
+    }
+  );
+
+export const insert = (user: User) => (
+  collection: Collection<Document>
+): te.TaskEither<RepositoryError | DuplicateError, User> => {
+  return pipe(
+    insertTE(user)(collection),
+    te.map(() => user)
   )
 };

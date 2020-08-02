@@ -38,7 +38,10 @@ const parseString = (fieldName: string) => (input: unknown) =>
   );
 
 const parseUsername = parseString("username");
-const parseBio = parseString("bio");
+const parseBio = (input: unknown) => input === undefined ? e.right(o.none) : pipe(
+  parseString("bio")(input),
+  e.map(o.some)
+);
 
 const parseHash = (input: unknown) =>
   pipe(
@@ -61,9 +64,10 @@ const parseEmail = (input: unknown) =>
   );
 
 const parseImage = (input: unknown) =>
-  pipe(
+  input === undefined ? e.right(o.none) : pipe(
     url(input),
-    e.fromOption(() => ({ image: "Not a valid URL" }))
+    e.fromOption(() => ({ image: "Not a valid URL" })),
+    e.map(o.some)
   );
 
 const parseArrayOfIds = (fieldName: keyof UserFieldErrors) => (
@@ -104,15 +108,23 @@ export const parseUser = (input: unknown): e.Either<UserParsingError, User> => {
 };
 
 type CreateUserPayloadFieldErrors = {
-  [key in keyof CreateUserPayload]?: string;
+  user:
+    | "NotAnObject"
+    | {
+        [key in keyof CreateUserPayload["user"]]?: string;
+      };
 };
 
 type InvalidCreateUserPayloadFields = {
-  __tag: "InvalidCreateUserPayloadFields",
-  errors: CreateUserPayloadFieldErrors
-}
+  __tag: "InvalidCreateUserPayloadFields";
+  errors: CreateUserPayloadFieldErrors;
+};
 
-type CreateUserPayloadParsingError = NotAnObject | InvalidCreateUserPayloadFields;
+type CreateUserPayloadParsingError =
+  | NotAnObject
+  | InvalidCreateUserPayloadFields;
+
+const createPayloadValidation = e.getValidation(getObjectSemigroup<{ [key in keyof CreateUserPayload["user"]]?: string }>());
 
 export const parseCreateUserPayload = (
   input: unknown
@@ -120,18 +132,31 @@ export const parseCreateUserPayload = (
   return pipe(
     unknownObject(input),
     e.fromOption(() => ({ __tag: "NotAnObject" as const })),
+    e.chainW((obj) =>
+      pipe(
+        unknownObject(obj.user),
+        e.fromOption(() => ({
+          __tag: "InvalidCreateUserPayloadFields" as const,
+          errors: { user: "NotAnObject" as const },
+        }))
+      )
+    ),
     e.chainW((obj) => {
-      const result = apply.sequenceS(objValidation)({
+      const result = apply.sequenceS(createPayloadValidation)({
         username: parseUsername(obj.username),
         email: parseEmail(obj.email),
-        bio: parseBio(obj.bio),
-        image: parseImage(obj.image),
         password: parseString("password")(obj.password),
       });
 
       return pipe(
         result,
-        e.mapLeft((errors) => ({ __tag: "InvalidCreateUserPayloadFields" as const, errors }))
+        e.map((userFields) => ({ user: userFields })),
+        e.mapLeft((errors) => ({
+          __tag: "InvalidCreateUserPayloadFields" as const,
+          errors: {
+            user: errors,
+          },
+        }))
       );
     })
   );

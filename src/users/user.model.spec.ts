@@ -1,7 +1,7 @@
 import { assert } from "chai";
 import { ObjectId } from "mongodb";
 import jwt from "jsonwebtoken";
-import * as e from "fp-ts/lib/Either";
+import * as o from 'fp-ts/lib/Option'
 
 import { Email, MongoId, URL } from "../types";
 import * as User from "./user.model";
@@ -14,8 +14,8 @@ describe("User model", () => {
         _id: new ObjectId().toString() as MongoId,
         username: "test123",
         email: "test@test.com" as Email,
-        bio: "Hi there",
-        image: "www.imgur.com/123" as URL,
+        bio: o.some("Hi there"),
+        image: o.some("www.imgur.com/123" as URL),
         salt: hashOutput.salt,
         hash: hashOutput.hash,
         favorites: [],
@@ -41,8 +41,8 @@ describe("User model", () => {
         _id: new ObjectId().toString() as MongoId,
         username: "test123",
         email: "test@test.com" as Email,
-        bio: "Hi there",
-        image: "www.imgur.com/123" as URL,
+        bio: o.some("Hi there"),
+        image: o.some("www.imgur.com/123" as URL),
         salt: hashOutput.salt,
         hash: hashOutput.hash,
         favorites: [favoriteId],
@@ -69,8 +69,8 @@ describe("User model", () => {
         _id: new ObjectId().toString() as MongoId,
         username: "test123",
         email: "test@test.com" as Email,
-        bio: "Hi there",
-        image: "www.imgur.com/123" as URL,
+        bio: o.some("Hi there"),
+        image: o.some("www.imgur.com/123" as URL),
         salt: hashOutput.salt,
         hash: hashOutput.hash,
         favorites: [],
@@ -107,8 +107,8 @@ describe("User model", () => {
         _id: new ObjectId().toString() as MongoId,
         username: "test123",
         email: "test@test.com" as Email,
-        bio: "Hi there",
-        image: "www.imgur.com/123" as URL,
+        bio: o.some("Hi there"),
+        image: o.some("www.imgur.com/123" as URL),
         salt: hashOutput.salt,
         hash: hashOutput.hash,
         favorites: [],
@@ -126,8 +126,8 @@ describe("User model", () => {
         _id: new ObjectId().toString() as MongoId,
         username: "test123",
         email: "test@test.com" as Email,
-        bio: "Hi there",
-        image: "www.imgur.com/123" as URL,
+        bio: o.some("Hi there"),
+        image: o.some("www.imgur.com/123" as URL),
         salt: hashOutput.salt,
         hash: hashOutput.hash,
         favorites: [],
@@ -144,11 +144,11 @@ describe("User model", () => {
       const generateMongoId = () => userId;
 
       const createUserPayload = {
-        username: "test123",
-        email: "test@example.com" as Email,
-        bio: "Hello everyone",
-        image: "www.imgur.com/images/1" as URL,
-        password: "1234",
+        user: {
+          username: "test123",
+          email: "test@example.com" as Email,
+          password: "1234",
+        }
       };
 
       const user = User.createUser(createUserPayload)({ generateMongoId })();
@@ -160,10 +160,10 @@ describe("User model", () => {
         userWithoutHashFields,
         {
           _id: userId,
-          username: createUserPayload.username,
-          email: createUserPayload.email,
-          bio: createUserPayload.bio,
-          image: createUserPayload.image,
+          username: createUserPayload.user.username,
+          email: createUserPayload.user.email,
+          bio: o.none,
+          image: o.none,
           favorites: [],
           following: [],
         }

@@ -11,11 +11,12 @@ import { generateMongoId } from "../types";
 import { createAuthenticatedHandler } from "../routes/authenticatedHandler";
 import * as User from "./user.model";
 import * as usersRepository from "./users.repository";
-import { parseCreateUserPayload } from './parsing'
+import { parseCreateUserPayload } from "./parsing";
 
 // TODO look into refactoring using Reader for passing around the db collection
 export const createUserRoutes = (usersCollection: Collection): Router => {
   const router = Router();
+  const toAuthUser = (user: User.User) => User.toAuthDTO(user)({ now: D.create, secret })()
 
   router.get(
     "/user",
@@ -34,20 +35,48 @@ export const createUserRoutes = (usersCollection: Collection): Router => {
               console.error(error);
               return res.sendStatus(500);
           }
-        }, o.fold(() => res.sendStatus(401), (user) => res.json(User.toAuthDTO(user)({ now: D.create, secret }))))
+        }, o.fold(() => res.sendStatus(401), (user) => res.json(toAuthUser(user))))
       );
     })
   );
 
-  router.post('/users', (req, res) => {
-    pipe(
+  router.post("/users", async (req, res) => {
+    const createNewUser = pipe(
       parseCreateUserPayload(req.body as unknown),
-      e.map(validPayload => User.createUser(validPayload)({ generateMongoId })),
+      e.map((validPayload) =>
+        User.createUser(validPayload)({ generateMongoId })()
+      ),
       te.fromEither,
-      // TODO save user using users repository
-      // TODO respond to client
-    )
-  })
+      te.chainW((user) => usersRepository.insert(user)(usersCollection))
+    );
 
-  return router
+    pipe(
+      await createNewUser(),
+      e.fold(
+        (error): ReturnType<typeof res.send> => {
+          switch (error.__tag) {
+            case "RepositoryError":
+              console.error(error.error);
+              return res.sendStatus(500);
+            case "NotAnObject":
+              return res.status(400).send("Request body must be an object");
+            case "InvalidCreateUserPayloadFields":
+              return res.status(400).send({
+                message: "Request payload was invalid",
+                errors: error.errors,
+              });
+            case "DuplicateError":
+              return res.status(409).send({
+                message: error.error,
+              });
+          }
+        },
+        (user) => {
+          return res.status(200).send({ user: toAuthUser(user) })
+        }
+      )
+    );
+  });
+
+  return router;
 };

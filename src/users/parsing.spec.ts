@@ -1,5 +1,6 @@
 import { assert } from "chai";
 import * as e from "fp-ts/lib/Either";
+import * as o from "fp-ts/lib/Option";
 import { ObjectId } from "mongodb";
 
 import { parseUser, parseCreateUserPayload } from "./parsing";
@@ -10,7 +11,7 @@ describe("user parsing", () => {
       const favId = new ObjectId().toString();
       const followId = new ObjectId().toString();
 
-      const user: unknown = {
+      const user = {
         _id: new ObjectId().toString(),
         username: "tester123",
         email: "test@test.com",
@@ -22,7 +23,10 @@ describe("user parsing", () => {
         salt: "123456fefuih",
       };
 
-      assert.deepStrictEqual(parseUser(user), e.right(user));
+      assert.deepStrictEqual(
+        parseUser(user),
+        e.right({ ...user, bio: o.some(user.bio), image: o.some(user.image) })
+      );
     });
 
     it("fails when given an input which isn't an object", () => {
@@ -32,7 +36,10 @@ describe("user parsing", () => {
     });
 
     it("returns all the field errors when the data is invalid", () => {
-      const user: unknown = {};
+      const user: unknown = {
+        bio: null,
+        image: 2
+      };
 
       assert.deepStrictEqual(
         parseUser(user),
@@ -56,7 +63,9 @@ describe("user parsing", () => {
 
   describe("parseCreateUserPayload", () => {
     it("fails when payload is invalid", () => {
-      const payload: unknown = {};
+      const payload: unknown = {
+        user: {},
+      };
 
       const result = parseCreateUserPayload(payload);
 
@@ -65,11 +74,11 @@ describe("user parsing", () => {
         e.left({
           __tag: "InvalidCreateUserPayloadFields" as const,
           errors: {
-            username: "Not a string",
-            email: "Not a valid email",
-            password: "Not a string",
-            bio: "Not a string",
-            image: "Not a valid URL",
+            user: {
+              username: "Not a string",
+              email: "Not a valid email",
+              password: "Not a string",
+            },
           },
         })
       );
@@ -77,11 +86,11 @@ describe("user parsing", () => {
 
     it("succeeds when payload is invalid", () => {
       const payload: unknown = {
-        username: "test123",
-        email: "test@example.com",
-        password: "1234",
-        bio: "Hello everyone",
-        image: "www.imgur.com/images/1",
+        user: {
+          username: "test123",
+          email: "test@example.com",
+          password: "1234",
+        },
       };
 
       const result = parseCreateUserPayload(payload);

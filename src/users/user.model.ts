@@ -2,6 +2,7 @@ import crypto from "crypto";
 import { pipe } from "fp-ts/lib/function";
 import * as D from "fp-ts/lib/Date";
 import * as io from "fp-ts/lib/IO";
+import * as o from "fp-ts/lib/Option";
 import jwt from "jsonwebtoken";
 
 import { JWTPayload } from "../routes/authenticatedHandler";
@@ -11,8 +12,8 @@ export type User = {
   _id: MongoId;
   username: string;
   email: Email;
-  bio: string;
-  image: URL;
+  bio: o.Option<string>;
+  image: o.Option<URL>;
   favorites: MongoId[];
   following: MongoId[];
   hash: Hash;
@@ -101,8 +102,8 @@ type AuthDTO = {
   username: string;
   email: string;
   token: string;
-  bio: string;
-  image: string;
+  bio?: string;
+  image?: string;
 };
 
 export const toAuthDTO = (user: User) => (deps: GenerateJWTDeps): io.IO<AuthDTO> => {
@@ -112,8 +113,8 @@ export const toAuthDTO = (user: User) => (deps: GenerateJWTDeps): io.IO<AuthDTO>
       username: user.username,
       email: user.email,
       token,
-      bio: user.bio,
-      image: user.image,
+      bio: o.toUndefined(user.bio),
+      image: o.toUndefined(user.image),
     }))
   );
 };
@@ -123,11 +124,11 @@ type CreateUserDeps = {
 }
 
 export type CreateUserPayload = {
-  username: string;
-  email: Email;
-  bio: string;
-  image: URL;
-  password: string
+  user: {
+    username: string;
+    email: Email;
+    password: string
+  }
 }
 
 
@@ -135,13 +136,13 @@ export const createUser = (input: CreateUserPayload) => (deps: CreateUserDeps): 
   return pipe(
     deps.generateMongoId,
     io.map(mongoId => {
-      const hashedPassword = hashPassword(input.password)
+      const hashedPassword = hashPassword(input.user.password)
       return {
         _id: mongoId,
-        username: input.username,
-        email: input.email,
-        bio: input.bio,
-        image: input.image,
+        username: input.user.username,
+        email: input.user.email,
+        bio: o.none,
+        image: o.none,
         favorites: [],
         following: [],
         hash: hashedPassword.hash,

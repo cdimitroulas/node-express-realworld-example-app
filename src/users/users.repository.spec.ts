@@ -35,6 +35,8 @@ describe("usersRepository", () => {
           o.some({
             ...userDocument,
             _id: userDocument._id.toString(),
+            bio: o.some(userDocument.bio),
+            image: o.some(userDocument.image),
             favorites: userDocument.favorites.map((id) => id.toString()),
             following: userDocument.following.map((id) => id.toString()),
           })
