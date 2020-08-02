@@ -5,7 +5,7 @@ import { Collection, ObjectId } from "mongodb";
 
 import { parseUser, UserParsingError } from "./parsing";
 import { User } from "./user.model";
-import { MongoId } from "../types";
+import { MongoId, Email } from "../types";
 import { pipe } from "fp-ts/lib/function";
 
 type RepositoryError = {
@@ -25,9 +25,9 @@ type DuplicateError = {
 
 type Document = Record<string, unknown> & { _id: ObjectId };
 
-const findOne = (id: MongoId) => (collection: Collection<Document>) =>
+const findOne = <T extends object>(query: T) => (collection: Collection<Document>) =>
   te.tryCatch(
-    () => collection.findOne({ id: new ObjectId(id) }),
+    () => collection.findOne(query),
     repositoryError
   );
 
@@ -35,7 +35,24 @@ export const findById = (id: MongoId) => (
   collection: Collection<Document>
 ): te.TaskEither<RepositoryError | UserParsingError, o.Option<User>> => {
   return pipe(
-    findOne(id)(collection),
+    findOne({ _id: id })(collection),
+    te.chainW((dbResult) => {
+      if (dbResult === null) return te.right(o.none);
+
+      return pipe(
+        parseUser(dbResult),
+        e.map(o.some),
+        te.fromEither
+      );
+    })
+  );
+};
+
+export const findByEmail = (email: string) => (
+  collection: Collection<Document>
+): te.TaskEither<RepositoryError | UserParsingError, o.Option<User>> => {
+  return pipe(
+    findOne({ email })(collection),
     te.chainW((dbResult) => {
       if (dbResult === null) return te.right(o.none);
 

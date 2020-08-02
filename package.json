@@ -31,6 +31,7 @@
     "@types/mongodb": "^3.5.25",
     "@types/morgan": "^1.9.1",
     "@types/passport": "^1.0.4",
+    "@types/passport-local": "^1.0.33",
     "body-parser": "1.15.0",
     "cors": "2.7.1",
     "ejs": "2.4.1",

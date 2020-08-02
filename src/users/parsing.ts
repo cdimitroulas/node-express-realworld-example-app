@@ -13,6 +13,7 @@ import {
   email,
   url,
 } from "../types";
+import { LoginPayload } from './users.http'
 import { CreateUserPayload, User, Hash, Salt } from "./user.model";
 
 type UserFieldErrors = { [key in keyof User]?: string };
@@ -161,3 +162,31 @@ export const parseCreateUserPayload = (
     })
   );
 };
+
+type InvalidLoginFields = {
+  __tag: "InvalidLoginFields";
+  errors: {
+    email?: "Not a string";
+    password?: "Not a string";
+  }
+}
+
+type LoginPayloadParsingError = NotAnObject | InvalidLoginFields;
+
+const loginValidation = e.getValidation(getObjectSemigroup<InvalidLoginFields["errors"]>())
+
+export const parseLoginPayload = (input: unknown): e.Either<LoginPayloadParsingError, LoginPayload> => {
+  return pipe(
+    unknownObject(input),
+    e.fromOption(() => ({ __tag: "NotAnObject" as const })),
+    e.chainW((record) => {
+      return pipe(
+        apply.sequenceS(loginValidation)({
+        email: parseString("email")(record.email),
+        password: parseString("password")(record.password),
+      }),
+        e.mapLeft(errors => ({ __tag: "InvalidLoginFields" as const, errors }))
+      )
+    })
+  )
+}

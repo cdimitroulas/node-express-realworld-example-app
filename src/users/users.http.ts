@@ -5,18 +5,29 @@ import * as D from "fp-ts/lib/Date";
 import * as e from "fp-ts/lib/Either";
 import * as o from "fp-ts/lib/Option";
 import * as te from "fp-ts/lib/TaskEither";
+import passport from "passport";
 
 import { secret } from "../config";
 import { generateMongoId } from "../types";
 import { createAuthenticatedHandler } from "../routes/authenticatedHandler";
+import { setupLocalAuthStrategy } from './auth'
 import * as User from "./user.model";
 import * as usersRepository from "./users.repository";
-import { parseCreateUserPayload } from "./parsing";
+import { parseCreateUserPayload, parseLoginPayload } from "./parsing";
+
+export type LoginPayload = {
+  email: string;
+  password: string;
+};
 
 // TODO look into refactoring using Reader for passing around the db collection
 export const createUserRoutes = (usersCollection: Collection): Router => {
   const router = Router();
-  const toAuthUser = (user: User.User) => User.toAuthDTO(user)({ now: D.create, secret })()
+  setupLocalAuthStrategy(usersRepository.findByEmail)(usersCollection)
+
+
+  const toAuthUser = (user: User.User) =>
+    User.toAuthDTO(user)({ now: D.create, secret })();
 
   router.get(
     "/user",
@@ -72,7 +83,67 @@ export const createUserRoutes = (usersCollection: Collection): Router => {
           }
         },
         (user) => {
-          return res.status(200).send({ user: toAuthUser(user) })
+          return res.status(200).send({ user: toAuthUser(user) });
+        }
+      )
+    );
+  });
+
+  router.post("/users/login", (req, res, next) => {
+    pipe(
+      parseLoginPayload(req.body.user),
+      e.fold(
+        (parsingError): ReturnType<typeof res.send> => {
+          console.error(parsingError)
+          switch (parsingError.__tag) {
+            case "NotAnObject":
+              return res.status(400).send("Payload must be an object");
+            case "InvalidLoginFields":
+              return res.status(400).send({
+                errors: parsingError.errors,
+                message: "Invalid payload",
+              });
+          }
+        },
+        // TODO this needs to be cleaned up 
+        () => {
+          return passport.authenticate(
+            "local",
+            { session: false },
+            async (err, user, info) => {
+              if (err) {
+                console.error(err);
+                return res.status(500).send("Internal server error");
+              }
+
+              if (user) {
+                console.log(user)
+                return pipe(
+                  await usersRepository.findById(user._id)(usersCollection)(),
+                  e.map((result) => {
+                    return pipe(
+                      result,
+                      o.fold(
+                        () => res.status(401).send("Unauthorized"),
+                        (user) =>
+                          res.status(200).send({ user: toAuthUser(user) })
+                      )
+                    );
+                  }),
+                  e.fold(
+                    (error) => {
+                      console.error(error);
+                      return res.sendStatus(500);
+                    },
+                    (result) => result
+                  )
+                );
+              }
+
+              console.log(info)
+              return res.status(400).json(info);
+            }
+          )(req, res, next);
         }
       )
     );
