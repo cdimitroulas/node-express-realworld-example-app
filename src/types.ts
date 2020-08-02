@@ -55,3 +55,5 @@ export const mongoId = (input: unknown): o.Option<MongoId> =>
       o.some
     )
   );
+
+export const generateMongoId = (): MongoId => new ObjectId().toString() as MongoId

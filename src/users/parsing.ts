@@ -13,17 +13,17 @@ import {
   email,
   url,
 } from "../types";
-import { User, Hash, Salt } from "./user.model";
+import { CreateUserPayload, User, Hash, Salt } from "./user.model";
 
-type FieldErrors = { [key in keyof User]?: string };
+type UserFieldErrors = { [key in keyof User]?: string };
 
 type NotAnObject = { __tag: "NotAnObject" };
 
-type InvalidFields = { __tag: "InvalidFields"; errors: FieldErrors };
+type InvalidFields = { __tag: "InvalidFields"; errors: UserFieldErrors };
 
-export type ParsingError = NotAnObject | InvalidFields;
+export type UserParsingError = NotAnObject | InvalidFields;
 
-const objValidation = e.getValidation(getObjectSemigroup<FieldErrors>());
+const objValidation = e.getValidation(getObjectSemigroup<UserFieldErrors>());
 
 const parseId = (input: unknown) =>
   pipe(
@@ -31,7 +31,7 @@ const parseId = (input: unknown) =>
     e.fromOption(() => ({ _id: "Not a valid ID" }))
   );
 
-const parseString = (fieldName: keyof FieldErrors) => (input: unknown) =>
+const parseString = (fieldName: string) => (input: unknown) =>
   pipe(
     string(input),
     e.fromOption(() => ({ [fieldName]: "Not a string" }))
@@ -66,7 +66,9 @@ const parseImage = (input: unknown) =>
     e.fromOption(() => ({ image: "Not a valid URL" }))
   );
 
-const parseArrayOfIds = (fieldName: keyof FieldErrors) => (input: unknown) =>
+const parseArrayOfIds = (fieldName: keyof UserFieldErrors) => (
+  input: unknown
+) =>
   pipe(
     array(input),
     o.chain(arrayOf(mongoId)),
@@ -76,7 +78,7 @@ const parseArrayOfIds = (fieldName: keyof FieldErrors) => (input: unknown) =>
 const parseFavorites = parseArrayOfIds("favorites");
 const parseFollowing = parseArrayOfIds("following");
 
-export const parseUser = (input: unknown): e.Either<ParsingError, User> => {
+export const parseUser = (input: unknown): e.Either<UserParsingError, User> => {
   return pipe(
     unknownObject(input),
     e.fromOption(() => ({ __tag: "NotAnObject" as const })),
@@ -96,6 +98,40 @@ export const parseUser = (input: unknown): e.Either<ParsingError, User> => {
       return pipe(
         result,
         e.mapLeft((errors) => ({ __tag: "InvalidFields" as const, errors }))
+      );
+    })
+  );
+};
+
+type CreateUserPayloadFieldErrors = {
+  [key in keyof CreateUserPayload]?: string;
+};
+
+type InvalidCreateUserPayloadFields = {
+  __tag: "InvalidCreateUserPayloadFields",
+  errors: CreateUserPayloadFieldErrors
+}
+
+type CreateUserPayloadParsingError = NotAnObject | InvalidCreateUserPayloadFields;
+
+export const parseCreateUserPayload = (
+  input: unknown
+): e.Either<CreateUserPayloadParsingError, CreateUserPayload> => {
+  return pipe(
+    unknownObject(input),
+    e.fromOption(() => ({ __tag: "NotAnObject" as const })),
+    e.chainW((obj) => {
+      const result = apply.sequenceS(objValidation)({
+        username: parseUsername(obj.username),
+        email: parseEmail(obj.email),
+        bio: parseBio(obj.bio),
+        image: parseImage(obj.image),
+        password: parseString("password")(obj.password),
+      });
+
+      return pipe(
+        result,
+        e.mapLeft((errors) => ({ __tag: "InvalidCreateUserPayloadFields" as const, errors }))
       );
     })
   );

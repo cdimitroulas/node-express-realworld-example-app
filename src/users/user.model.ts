@@ -117,6 +117,40 @@ export const toAuthDTO = (user: User) => (deps: GenerateJWTDeps): io.IO<AuthDTO>
     }))
   );
 };
+
+type CreateUserDeps = {
+  generateMongoId: io.IO<MongoId>;
+}
+
+export type CreateUserPayload = {
+  username: string;
+  email: Email;
+  bio: string;
+  image: URL;
+  password: string
+}
+
+
+export const createUser = (input: CreateUserPayload) => (deps: CreateUserDeps): io.IO<User> => {
+  return pipe(
+    deps.generateMongoId,
+    io.map(mongoId => {
+      const hashedPassword = hashPassword(input.password)
+      return {
+        _id: mongoId,
+        username: input.username,
+        email: input.email,
+        bio: input.bio,
+        image: input.image,
+        favorites: [],
+        following: [],
+        hash: hashedPassword.hash,
+        salt: hashedPassword.salt,
+      }
+    }),
+  )
+}
+
 // UserSchema.methods.toAuthJSON = function(){
 //   return {
 //     username: this.username,

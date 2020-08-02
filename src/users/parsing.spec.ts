@@ -2,7 +2,7 @@ import { assert } from "chai";
 import * as e from "fp-ts/lib/Either";
 import { ObjectId } from "mongodb";
 
-import { parseUser } from "./parsing";
+import { parseUser, parseCreateUserPayload } from "./parsing";
 
 describe("user parsing", () => {
   describe("parseUser", () => {
@@ -51,6 +51,42 @@ describe("user parsing", () => {
           },
         })
       );
+    });
+  });
+
+  describe("parseCreateUserPayload", () => {
+    it("fails when payload is invalid", () => {
+      const payload: unknown = {};
+
+      const result = parseCreateUserPayload(payload);
+
+      assert.deepStrictEqual(
+        result,
+        e.left({
+          __tag: "InvalidCreateUserPayloadFields" as const,
+          errors: {
+            username: "Not a string",
+            email: "Not a valid email",
+            password: "Not a string",
+            bio: "Not a string",
+            image: "Not a valid URL",
+          },
+        })
+      );
+    });
+
+    it("succeeds when payload is invalid", () => {
+      const payload: unknown = {
+        username: "test123",
+        email: "test@example.com",
+        password: "1234",
+        bio: "Hello everyone",
+        image: "www.imgur.com/images/1",
+      };
+
+      const result = parseCreateUserPayload(payload);
+
+      assert.deepStrictEqual(result, e.right(payload));
     });
   });
 });

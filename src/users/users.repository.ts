@@ -3,7 +3,7 @@ import * as o from "fp-ts/lib/Option";
 import * as te from "fp-ts/lib/TaskEither";
 import { Collection, ObjectId } from "mongodb";
 
-import { parseUser, ParsingError } from "./parsing";
+import { parseUser, UserParsingError } from "./parsing";
 import { User } from "./user.model";
 import { MongoId } from "../types";
 import {pipe} from "fp-ts/lib/function";
@@ -28,7 +28,7 @@ const findOne = (id: MongoId) => (collection: Collection<Document>) =>
 
 export const findById = (id: MongoId) => (
   collection: Collection<Document>
-): te.TaskEither<RepositoryError | ParsingError, o.Option<User>> => {
+): te.TaskEither<RepositoryError | UserParsingError, o.Option<User>> => {
   return pipe(
     findOne(id)(collection),
     te.chainW(dbResult => {
