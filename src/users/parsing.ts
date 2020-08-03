@@ -13,7 +13,7 @@ import {
   email,
   url,
 } from "../types";
-import { LoginPayload } from './users.http'
+import { LoginPayload } from "./users.http";
 import { CreateUserPayload, User, Hash, Salt } from "./user.model";
 
 type UserFieldErrors = { [key in keyof User]?: string };
@@ -39,10 +39,13 @@ const parseString = (fieldName: string) => (input: unknown) =>
   );
 
 const parseUsername = parseString("username");
-const parseBio = (input: unknown) => input === undefined ? e.right(o.none) : pipe(
-  parseString("bio")(input),
-  e.map(o.some)
-);
+const parseBio = (input: unknown) =>
+  input === undefined || input === null
+    ? e.right(o.none)
+    : pipe(
+        parseString("bio")(input),
+        e.map(o.some)
+      );
 
 const parseHash = (input: unknown) =>
   pipe(
@@ -65,11 +68,13 @@ const parseEmail = (input: unknown) =>
   );
 
 const parseImage = (input: unknown) =>
-  input === undefined ? e.right(o.none) : pipe(
-    url(input),
-    e.fromOption(() => ({ image: "Not a valid URL" })),
-    e.map(o.some)
-  );
+  input === undefined || input === null
+    ? e.right(o.none)
+    : pipe(
+        url(input),
+        e.fromOption(() => ({ image: "Not a valid URL" })),
+        e.map(o.some)
+      );
 
 const parseArrayOfIds = (fieldName: keyof UserFieldErrors) => (
   input: unknown
@@ -125,7 +130,9 @@ type CreateUserPayloadParsingError =
   | NotAnObject
   | InvalidCreateUserPayloadFields;
 
-const createPayloadValidation = e.getValidation(getObjectSemigroup<{ [key in keyof CreateUserPayload["user"]]?: string }>());
+const createPayloadValidation = e.getValidation(
+  getObjectSemigroup<{ [key in keyof CreateUserPayload["user"]]?: string }>()
+);
 
 export const parseCreateUserPayload = (
   input: unknown
@@ -168,25 +175,32 @@ type InvalidLoginFields = {
   errors: {
     email?: "Not a string";
     password?: "Not a string";
-  }
-}
+  };
+};
 
 type LoginPayloadParsingError = NotAnObject | InvalidLoginFields;
 
-const loginValidation = e.getValidation(getObjectSemigroup<InvalidLoginFields["errors"]>())
+const loginValidation = e.getValidation(
+  getObjectSemigroup<InvalidLoginFields["errors"]>()
+);
 
-export const parseLoginPayload = (input: unknown): e.Either<LoginPayloadParsingError, LoginPayload> => {
+export const parseLoginPayload = (
+  input: unknown
+): e.Either<LoginPayloadParsingError, LoginPayload> => {
   return pipe(
     unknownObject(input),
     e.fromOption(() => ({ __tag: "NotAnObject" as const })),
     e.chainW((record) => {
       return pipe(
         apply.sequenceS(loginValidation)({
-        email: parseString("email")(record.email),
-        password: parseString("password")(record.password),
-      }),
-        e.mapLeft(errors => ({ __tag: "InvalidLoginFields" as const, errors }))
-      )
+          email: parseString("email")(record.email),
+          password: parseString("password")(record.password),
+        }),
+        e.mapLeft((errors) => ({
+          __tag: "InvalidLoginFields" as const,
+          errors,
+        }))
+      );
     })
-  )
-}
+  );
+};

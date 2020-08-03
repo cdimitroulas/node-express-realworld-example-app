@@ -94,7 +94,6 @@ export const createUserRoutes = (usersCollection: Collection): Router => {
       parseLoginPayload(req.body.user),
       e.fold(
         (parsingError): ReturnType<typeof res.send> => {
-          console.error(parsingError)
           switch (parsingError.__tag) {
             case "NotAnObject":
               return res.status(400).send("Payload must be an object");
@@ -112,35 +111,13 @@ export const createUserRoutes = (usersCollection: Collection): Router => {
             { session: false },
             async (err, user, info) => {
               if (err) {
-                console.error(err);
                 return res.status(500).send("Internal server error");
               }
 
               if (user) {
-                console.log(user)
-                return pipe(
-                  await usersRepository.findById(user._id)(usersCollection)(),
-                  e.map((result) => {
-                    return pipe(
-                      result,
-                      o.fold(
-                        () => res.status(401).send("Unauthorized"),
-                        (user) =>
-                          res.status(200).send({ user: toAuthUser(user) })
-                      )
-                    );
-                  }),
-                  e.fold(
-                    (error) => {
-                      console.error(error);
-                      return res.sendStatus(500);
-                    },
-                    (result) => result
-                  )
-                );
+                return res.status(200).send({ user: toAuthUser(user) })
               }
 
-              console.log(info)
               return res.status(400).json(info);
             }
           )(req, res, next);

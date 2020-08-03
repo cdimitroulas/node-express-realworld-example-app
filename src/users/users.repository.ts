@@ -5,7 +5,7 @@ import { Collection, ObjectId } from "mongodb";
 
 import { parseUser, UserParsingError } from "./parsing";
 import { User } from "./user.model";
-import { MongoId, Email } from "../types";
+import { MongoId } from "../types";
 import { pipe } from "fp-ts/lib/function";
 
 type RepositoryError = {
@@ -21,15 +21,13 @@ const repositoryError = (error: unknown) => ({
 type DuplicateError = {
   __tag: "DuplicateError";
   error: "Email already taken" | "Username already taken";
-}
+};
 
 type Document = Record<string, unknown> & { _id: ObjectId };
 
-const findOne = <T extends object>(query: T) => (collection: Collection<Document>) =>
-  te.tryCatch(
-    () => collection.findOne(query),
-    repositoryError
-  );
+const findOne = <T extends object>(query: T) => (
+  collection: Collection<Document>
+) => te.tryCatch(() => collection.findOne(query), repositoryError);
 
 export const findById = (id: MongoId) => (
   collection: Collection<Document>
@@ -67,7 +65,13 @@ export const findByEmail = (email: string) => (
 
 const insertTE = (user: User) => (collection: Collection<Document>) =>
   te.tryCatch(
-    () => collection.insertOne({ ...user, _id: new ObjectId(user._id) }),
+    () =>
+      collection.insertOne({
+        ...user,
+        _id: new ObjectId(user._id),
+        bio: o.toUndefined(user.bio),
+        image: o.toUndefined(user.image),
+      }),
     (error) => {
       // TODO deal with MongoDB duplicate key error
       return repositoryError(error);
@@ -80,5 +84,5 @@ export const insert = (user: User) => (
   return pipe(
     insertTE(user)(collection),
     te.map(() => user)
-  )
+  );
 };

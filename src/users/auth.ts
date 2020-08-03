@@ -32,14 +32,13 @@ export const setupLocalAuthStrategy = (findUserByEmail: typeof findByEmail) => (
                     done(null, user);
                     return o.some(undefined);
                   }
+                  console.log("Invalid password")
 
                   return o.none;
                 })
               );
               o.getOrElse(() => {
-                done({
-                  errors: { "email or password": "Invalid email or password" },
-                });
+                done(null, false, { message: "Invalid email or password" });
               });
             }
           )
